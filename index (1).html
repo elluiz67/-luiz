@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPERADOR - Sistema de Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --militar-green: #0a0c0a;
+            --militar-accent: #1a1c1a;
+            --militar-text: #a0a5a0;
+            --militar-highlight: #00ff00;
+            --militar-border: #2d332d;
+        }
+        body {
+            background-color: var(--militar-green);
+            color: var(--militar-text);
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            background-color: var(--militar-accent);
+            border-right: 1px solid var(--militar-border);
+            transition: transform 0.3s ease;
+        }
+        .lesson-card {
+            background-color: #141614;
+            border: 1px solid var(--militar-border);
+            transition: all 0.2s;
+        }
+        .lesson-card:hover {
+            border-color: var(--militar-highlight);
+            background-color: #1a1c1a;
+        }
+        .active-lesson {
+            border-left: 4px solid var(--militar-highlight);
+            background-color: #1a1c1a;
+            color: white;
+        }
+        .btn-militar {
+            background-color: #1a1c1a;
+            border: 1px solid var(--militar-border);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-militar:hover {
+            background-color: var(--militar-highlight);
+            color: black;
+        }
+        .hidden { display: none; }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                z-index: 50;
+                height: 100%;
+                width: 85%;
+                transform: translateX(-100%);
+            }
+            .sidebar.open { transform: translateX(0); }
+        }
+        .terminal-box {
+            border: 1px solid var(--militar-border);
+            background: #0d0f0d;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE CARREGAMENTO -->
+    <div id="loading-screen" class="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
+        <div class="text-[#00ff00] font-bold animate-pulse tracking-widest">CONECTANDO AO PROTOCOLO...</div>
+        <div class="text-[10px] mt-2 opacity-50">SINCRONIZAÇÃO GLOBAL EM CURSO</div>
+    </div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full terminal-box shadow-2xl">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-white tracking-tighter">OPERADOR</h1>
+                <p class="text-[10px] mt-2 opacity-50 tracking-[0.3em]">SISTEMA DE ACESSO RESTRITO</p>
+            </div>
+            
+            <div id="login-box">
+                <input type="email" id="login-email" placeholder="USUARIO@OPERADOR.COM" class="w-full bg-black border border-[#2d332d] p-3 mb-4 text-white focus:border-[#00ff00] outline-none text-sm">
+                <input type="password" id="login-pass" placeholder="SENHA_DE_ACESSO" class="w-full bg-black border border-[#2d332d] p-3 mb-6 text-white focus:border-[#00ff00] outline-none text-sm">
+                <button onclick="handleLogin()" class="w-full btn-militar py-3 font-bold mb-4 text-sm">AUTENTICAR</button>
+                <p class="text-center text-[10px]">SEM CREDENCIAIS? <a href="#" onclick="toggleAuth()" class="text-[#00ff00] underline">SOLICITAR ACESSO</a></p>
+            </div>
+
+            <div id="register-box" class="hidden">
+                <input type="email" id="reg-email" placeholder="NOVO_USUARIO@OPERADOR.COM" class="w-full bg-black border border-[#2d332d] p-3 mb-4 text-white focus:border-[#00ff00] outline-none text-sm">
+                <input type="password" id="reg-pass" placeholder="DEFINIR_SENHA" class="w-full bg-black border border-[#2d332d] p-3 mb-6 text-white focus:border-[#00ff00] outline-none text-sm">
+                <button onclick="handleRegister()" class="w-full btn-militar py-3 font-bold mb-4 text-sm">CADASTRAR</button>
+                <p class="text-center text-[10px]">JÁ POSSUI ACESSO? <a href="#" onclick="toggleAuth()" class="text-[#00ff00] underline">VOLTAR</a></p>
+            </div>
+            <p id="auth-msg" class="text-center text-[10px] mt-4 text-red-500 font-bold"></p>
+        </div>
+    </div>
+
+    <!-- ÁREA DE MEMBROS -->
+    <div id="app-screen" class="hidden min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar w-full md:w-80 flex-shrink-0 overflow-y-auto">
+            <div class="p-6 border-b border-[#2d332d] flex justify-between items-center">
+                <h2 class="font-bold text-white text-xs tracking-widest">MÓDULOS OPERACIONAIS</h2>
+                <button onclick="toggleMenu()" class="md:hidden text-white">✕</button>
+            </div>
+            <div id="module-list" class="p-4 space-y-2"></div>
+            <div class="p-6 border-t border-[#2d332d] space-y-4">
+                <div class="text-[9px] opacity-30 tracking-widest">CANAIS DE SUPORTE</div>
+                <a href="https://chat.whatsapp.com/GpJhkYZOOJPCtE4Hgf49Wt" target="_blank" class="block text-[10px] hover:text-[#00ff00]">➔ WHATSAPP</a>
+                <a href="https://t.me/+ltuTMXJHdm84NjUx" target="_blank" class="block text-[10px] hover:text-[#00ff00]">➔ TELEGRAM</a>
+                <a href="https://www.instagram.com/operador_mode?igsh=MTczaXkzcmN3OWR4Zw==" target="_blank" class="block text-[10px] hover:text-[#00ff00]">➔ INSTAGRAM</a>
+                <button onclick="logout()" class="w-full text-left text-[10px] text-red-500 mt-8 font-bold">➔ ENCERRAR SESSÃO</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="h-14 border-b border-[#2d332d] flex items-center justify-between px-6 bg-[#0a0c0a] sticky top-0 z-40">
+                <button onclick="toggleMenu()" class="md:hidden btn-militar px-3 py-1 text-[10px]">MENU</button>
+                <div class="text-[10px] font-bold text-white tracking-widest truncate" id="header-title">OPERADOR // CARREGANDO...</div>
+                <div id="sync-indicator" class="w-2 h-2 rounded-full bg-gray-600"></div>
+            </header>
+
+            <main class="p-4 md:p-8 overflow-y-auto">
+                <!-- Painel Admin -->
+                <div id="admin-panel" class="hidden mb-8 p-6 border-2 border-dashed border-[#00ff00] bg-[#0d0f0d]">
+                    <h3 class="text-[#00ff00] font-bold text-xs mb-4 tracking-widest">COMANDO CENTRAL (ADMIN)</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[9px] block mb-1 opacity-50">UPLOAD DE MÍDIA:</label>
+                                <input type="file" id="admin-file" class="text-[10px] text-white mb-2 block w-full">
+                                <button onclick="uploadFile()" id="upload-btn" class="bg-white text-black text-[10px] px-4 py-2 font-bold hover:bg-[#00ff00] transition w-full">SUBIR ARQUIVO</button>
+                            </div>
+                            <div>
+                                <label class="text-[9px] block mb-1 opacity-50">URL DO VÍDEO:</label>
+                                <input type="text" id="edit-video" placeholder="LINK DO YOUTUBE OU UPLOAD" class="w-full bg-black border border-[#2d332d] p-2 text-white text-xs outline-none focus:border-[#00ff00]">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] block mb-1 opacity-50">DESCRIÇÃO DA AULA:</label>
+                            <textarea id="edit-desc" rows="4" placeholder="CONTEÚDO DA MISSÃO..." class="w-full bg-black border border-[#2d332d] p-2 text-white text-xs outline-none focus:border-[#00ff00]"></textarea>
+                        </div>
+                        <button onclick="saveGlobal()" class="w-full bg-[#00ff00] text-black font-bold py-3 text-xs tracking-widest hover:bg-white transition">SINCRONIZAR ALTERAÇÕES GLOBALMENTE</button>
+                    </div>
+                </div>
+
+                <!-- Video Player -->
+                <div class="aspect-video bg-black mb-8 border border-[#2d332d] shadow-2xl" id="video-container"></div>
+
+                <!-- Content -->
+                <div class="max-w-4xl">
+                    <div id="lesson-content" class="text-sm leading-relaxed mb-12 whitespace-pre-wrap opacity-80"></div>
+                    
+                    <!-- GPT Integration -->
+                    <div id="gpt-block" class="hidden p-8 border border-[#00ff00] bg-[#0d0f0d] mb-12">
+                        <div class="text-[#00ff00] font-bold text-xs mb-2 tracking-widest">INTELIGÊNCIA TÁTICA DISPONÍVEL</div>
+                        <p class="text-[11px] mb-6 opacity-60">Acesse o protocolo de IA para suporte avançado nesta missão.</p>
+                        <a href="https://chatgpt.com/g/g-695cf96125dc8191851b80cf451c34ce-modo-operador" target="_blank" class="inline-block btn-militar px-6 py-3 text-[10px] font-bold tracking-widest">INICIAR AGENTE IA</a>
+                    </div>
+
+                    <!-- Mission -->
+                    <div class="p-8 border border-[#2d332d] bg-[#141614]">
+                        <div class="text-white font-bold text-xs mb-4 tracking-widest">OBJETIVO DA MISSÃO</div>
+                        <p id="mission-text" class="text-[11px] opacity-50 mb-8 leading-relaxed"></p>
+                        <button onclick="this.innerText='MISSÃO CUMPRIDA'; this.style.color='#00ff00'; this.style.borderColor='#00ff00'" class="btn-militar px-8 py-3 text-[10px] font-bold tracking-widest">CONCLUIR MISSÃO</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            binId: '6968beddd0ea881f406d6a61',
+            apiKey: '$2a$10$i8vQRllj3BcgYIrc2bTuquanGoyiPhMlrOwgrnMWlGwCHj7QeVuMS'
+        };
+
+        let state = {
+            users: [{email: 'rsdluiz@outlook.com', pass: 'Rose@1576', admin: true}],
+            lessons: [
+                { title: "O MANIFESTO", video: "", desc: "Bem-vindo ao Modo Operador.", mission: "Assista ao vídeo de introdução.", gpt: false },
+                { title: "O SISTEMA", video: "", desc: "Entenda as regras do jogo.", mission: "Configure seu ambiente operacional.", gpt: false },
+                { title: "AGENTES DE IA", video: "", desc: "Domine a tecnologia de ponta.", mission: "Interaja com o Agente IA pela primeira vez.", gpt: true }
+            ]
+        };
+
+        let currentUser = null;
+        let currentIndex = 0;
+
+        // SINCRONIZAÇÃO
+        async function syncDown() {
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.binId}/latest`, {
+                    headers: { 'X-Master-Key': CONFIG.apiKey, 'X-Bin-Meta': 'false' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.users && data.lessons) {
+                        state = data;
+                        document.getElementById('sync-indicator').style.backgroundColor = '#00ff00';
+                        return true;
+                    }
+                }
+            } catch (e) { 
+                document.getElementById('sync-indicator').style.backgroundColor = '#ff0000';
+            }
+            return false;
+        }
+
+        async function syncUp() {
+            document.getElementById('sync-indicator').style.backgroundColor = '#fbbf24';
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.binId}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-Master-Key': CONFIG.apiKey,
+                        'X-Bin-Versioning': 'false'
+                    },
+                    body: JSON.stringify(state)
+                });
+                
+                if (res.ok) {
+                    document.getElementById('sync-indicator').style.backgroundColor = '#00ff00';
+                    return true;
+                } else {
+                    const errData = await res.json();
+                    console.error("Erro JSONBin:", errData);
+                    if (res.status === 401) alert("ERRO 401: Chave API sem permissão.");
+                    else if (res.status === 403) alert("ERRO 403: Acesso negado. Verifique a visibilidade do Bin.");
+                    else alert("ERRO " + res.status + ": " + (errData.message || "Falha na sincronização"));
+                }
+            } catch (e) {
+                document.getElementById('sync-indicator').style.backgroundColor = '#ff0000';
+                alert("ERRO DE REDE: Verifique sua conexão.");
+            }
+            return false;
+        }
+
+        // UPLOAD
+        async function uploadFile() {
+            const fileInput = document.getElementById('admin-file');
+            const btn = document.getElementById('upload-btn');
+            if (!fileInput.files[0]) return alert("Selecione um arquivo!");
+
+            btn.innerText = "PROCESSANDO UPLOAD...";
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch('https://file.io', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('edit-video').value = data.link;
+                    alert("UPLOAD CONCLUÍDO. O LINK FOI INSERIDO.");
+                } else {
+                    alert("ERRO NO UPLOAD. TENTE UM ARQUIVO MENOR.");
+                }
+            } catch (e) {
+                alert("ERRO DE CONEXÃO.");
+            }
+            btn.innerText = "SUBIR ARQUIVO";
+        }
+
+        // AUTH
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.toLowerCase();
+            const pass = document.getElementById('login-pass').value;
+            await syncDown();
+            const user = state.users.find(u => u.email === email && u.pass === pass);
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('op_session', JSON.stringify(user));
+                initApp();
+            } else {
+                document.getElementById('auth-msg').innerText = "ACESSO NEGADO: CREDENCIAIS INVÁLIDAS";
+            }
+        }
+
+        async function handleRegister() {
+            const email = document.getElementById('reg-email').value.toLowerCase();
+            const pass = document.getElementById('reg-pass').value;
+            if (!email || !pass) return;
+            await syncDown();
+            if (state.users.find(u => u.email === email)) return alert("EMAIL JÁ CADASTRADO NO SISTEMA.");
+            state.users.push({ email, pass, admin: false });
+            await syncUp();
+            alert("CADASTRO REALIZADO. AGUARDANDO AUTENTICAÇÃO.");
+            toggleAuth();
+        }
+
+        // APP
+        function initApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            if (currentUser.admin) document.getElementById('admin-panel').classList.remove('hidden');
+            renderNav();
+            loadLesson(0);
+            
+            setInterval(async () => {
+                if (!currentUser.admin) {
+                    const changed = await syncDown();
+                    if (changed) {
+                        renderNav();
+                        loadLesson(currentIndex, true);
+                    }
+                }
+            }, 30000);
+        }
+
+        function renderNav() {
+            const list = document.getElementById('module-list');
+            list.innerHTML = state.lessons.map((l, i) => `
+                <div onclick="loadLesson(${i})" class="lesson-card p-4 cursor-pointer text-[10px] font-bold tracking-widest ${i === currentIndex ? 'active-lesson' : ''}">
+                    ${String(i + 1).padStart(2, '0')}. ${l.title}
+                </div>
+            `).join('');
+        }
+
+        function loadLesson(index, isAutoSync = false) {
+            currentIndex = index;
+            const l = state.lessons[index];
+            document.getElementById('header-title').innerText = `OPERADOR // ${l.title}`;
+            document.getElementById('lesson-content').innerText = l.desc;
+            document.getElementById('mission-text').innerText = l.mission;
+            document.getElementById('gpt-block').classList.toggle('hidden', !l.gpt);
+            
+            if (!isAutoSync) {
+                const container = document.getElementById('video-container');
+                container.innerHTML = renderPlayer(l.video);
+            }
+
+            if (currentUser.admin) {
+                document.getElementById('edit-video').value = l.video;
+                document.getElementById('edit-desc').value = l.desc;
+            }
+            renderNav();
+        }
+
+        function renderPlayer(url) {
+            if (!url) return `<div class="flex items-center justify-center h-full text-[10px] opacity-20 tracking-[0.5em]">AGUARDANDO TRANSMISSÃO...</div>`;
+            
+            // YouTube - Lógica de contorno de restrição para ambiente hospedado
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let id = "";
+                try {
+                    if (url.includes('v=')) id = url.split('v=')[1].split('&')[0];
+                    else id = url.split('/').pop().split('?')[0];
+                } catch(e) { id = url; }
+                
+                // Usando o modo 'nocookie' e parâmetros que forçam a exibição em ambiente WEB
+                return `
+                <div class="relative w-full h-full bg-black">
+                    <iframe class="absolute inset-0 w-full h-full" 
+                        src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&enablejsapi=1" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen>
+                    </iframe>
+                </div>`;
+            }
+            
+            // Vimeo
+            if (url.includes('vimeo.com')) {
+                const id = url.split('/').pop();
+                return `<iframe src="https://player.vimeo.com/video/${id}?badge=0&autopause=0" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+            }
+
+            // Direct Video (MP4, etc) ou links de upload
+            if (url.match(/\.(mp4|webm|mov)$/i) || url.includes('file.io')) {
+                return `<video controls controlsList="nodownload" class="w-full h-full bg-black">
+                    <source src="${url}" type="video/mp4">
+                    Seu navegador não suporta a reprodução direta.
+                </video>`;
+            }
+
+            // Fallback Universal
+            return `<iframe src="${url}" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+        }
+
+        async function saveGlobal() {
+            if (!currentUser.admin) return;
+            state.lessons[currentIndex].video = document.getElementById('edit-video').value;
+            state.lessons[currentIndex].desc = document.getElementById('edit-desc').value;
+            const success = await syncUp();
+            if (success) {
+                alert("SISTEMA ATUALIZADO GLOBALMENTE.");
+                loadLesson(currentIndex);
+            }
+        }
+
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+        function logout() { localStorage.clear(); location.reload(); }
+
+        // START
+        (async () => {
+            await syncDown();
+            document.getElementById('loading-screen').classList.add('hidden');
+            const session = localStorage.getItem('op_session');
+            if (session) {
+                currentUser = JSON.parse(session);
+                initApp();
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+            }
+        })();
+    </script>
+</body>
+</html>
